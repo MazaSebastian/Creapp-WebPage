@@ -1,0 +1,8 @@
+{
+  "name": "Creapp - Fintech Innovation Hub",
+  "description": "A high-performance fintech application platform designed for building the future of financial services with AI integration.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
