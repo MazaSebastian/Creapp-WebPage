@@ -182,7 +182,7 @@ const ProposalView: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen text-slate-200 font-body p-4 md:p-10 overflow-hidden relative"
+      className="min-h-screen text-slate-200 font-body p-4 md:p-6 lg:p-10 overflow-hidden relative"
       style={{ backgroundColor: 'var(--color-proposal-dark)' }}
     >
       {/* Background Subtle Grid */}
@@ -207,12 +207,12 @@ const ProposalView: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="flex flex-col md:items-end">
+        <div className="flex flex-col md:items-end w-full md:w-auto mt-6 md:mt-0">
           {proposal.client_logo_url && (
-            <img src={proposal.client_logo_url} alt={proposal.client_name} className="h-9 md:h-12 w-auto object-contain mb-2" />
+            <img src={proposal.client_logo_url} alt={proposal.client_name} className="h-8 md:h-12 w-auto object-contain mb-2 origin-left md:origin-right" />
           )}
           {!proposal.client_logo_url && (
-            <h2 className="text-xl font-display font-black text-white tracking-tight mb-2">{proposal.client_name}</h2>
+            <h2 className="text-xl md:text-2xl font-display font-black text-white tracking-tight mb-2 truncate max-w-full">{proposal.client_name}</h2>
           )}
           <div className="flex gap-4 mt-1 text-[11px] text-slate-600 uppercase tracking-widest font-black">
             <span>{proposal.date}</span>
@@ -229,7 +229,7 @@ const ProposalView: React.FC = () => {
           whileInView="visible"
           viewport={{ once: true, margin: '-100px' }}
           variants={fadeUp}
-          className="relative overflow-hidden rounded-[3rem] border border-white/5 p-8 md:p-20 shadow-2xl group"
+          className="relative overflow-hidden rounded-[2.5rem] md:rounded-[3rem] border border-white/5 p-6 md:p-12 lg:p-20 shadow-2xl group"
           style={{ backgroundColor: 'var(--color-proposal-panel)' }}
         >
           <div
@@ -245,13 +245,13 @@ const ProposalView: React.FC = () => {
                 <Rocket size={14} className="fill-current" />
                 MÁS QUE UNA APP
               </div>
-              <h3 className="text-4xl md:text-6xl font-display font-black text-white mb-10 leading-[1.05] tracking-tighter">
+              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white mb-6 md:mb-10 leading-[1.05] tracking-tighter">
                 Llevamos tu sistema de gestión <br />
                 <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>
                   al próximo nivel.
                 </span>
               </h3>
-              <p className="text-slate-400 text-xl leading-relaxed font-light max-w-lg">{proposal.description}</p>
+              <p className="text-slate-400 text-lg md:text-xl leading-relaxed font-light max-w-lg">{proposal.description}</p>
             </div>
             <div className="hidden md:block">
               <motion.div
@@ -288,13 +288,13 @@ const ProposalView: React.FC = () => {
             className="space-y-12"
           >
             <motion.div variants={fadeUp} className="flex flex-col items-center text-center">
-              <h3 className="text-3xl md:text-5xl font-display font-black text-white uppercase tracking-tighter mb-4">
+              <h3 className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-white uppercase tracking-tighter mb-4">
                 Prototipos{' '}
                 <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>
                   Disponibles
                 </span>
               </h3>
-              <p className="text-slate-400 max-w-2xl font-light text-lg">
+              <p className="text-slate-400 max-w-2xl font-light text-base md:text-lg">
                 Evaluá las alternativas interactivas construidas para tu proyecto y elegí la arquitectura que mejor se adapte a tus
                 objetivos comerciales.
               </p>
@@ -313,7 +313,7 @@ const ProposalView: React.FC = () => {
                     style={{ backgroundColor: 'var(--color-proposal-panel)' }}
                   >
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] rounded-full blur-[80px] group-hover:bg-white/[0.04] transition-colors pointer-events-none"></div>
-                    <div className="p-10 flex flex-col h-full relative z-10">
+                    <div className="p-6 md:p-10 flex flex-col h-full relative z-10">
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
                         <div className="p-4 rounded-2xl bg-white/5 border border-white/5 shadow-inner">
                           <IconResolver name={option.style_variant === 'premium' ? 'Box' : 'LayoutDashboard'} size={24} className={option.style_variant === 'premium' ? '' : 'text-blue-500'} />
@@ -374,24 +374,24 @@ const ProposalView: React.FC = () => {
             variants={fadeUp}
             className="lg:col-span-2 space-y-8"
           >
-            <div className="flex gap-4 p-2 bg-white/5 rounded-2xl border border-white/5 w-fit shadow-inner">
+            <div className="flex bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit shadow-inner overflow-hidden p-1.5 md:p-2">
               <button
                 onClick={() => setActiveTab('alcance')}
-                className={`px-10 py-3.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 ${activeTab === 'alcance' ? 'text-white shadow-2xl -translate-y-0.5' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`flex-1 md:flex-none px-4 md:px-10 py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest md:tracking-[0.2em] transition-all duration-500 whitespace-nowrap ${activeTab === 'alcance' ? 'text-white shadow-2xl -translate-y-0.5' : 'text-slate-500 hover:text-slate-300'}`}
                 style={activeTab === 'alcance' ? { background: gradientStyle } : {}}
               >
                 Inclusiones
               </button>
               <button
                 onClick={() => setActiveTab('exclusiones')}
-                className={`px-10 py-3.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 ${activeTab === 'exclusiones' ? 'bg-red-900/40 text-red-200 border border-red-500/20 shadow-2xl -translate-y-0.5' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`flex-1 md:flex-none px-4 md:px-10 py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest md:tracking-[0.2em] transition-all duration-500 whitespace-nowrap ${activeTab === 'exclusiones' ? 'bg-red-900/40 text-red-200 border border-red-500/20 shadow-2xl -translate-y-0.5' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 Exclusiones
               </button>
             </div>
 
             <div
-              className="border border-white/5 rounded-[2.5rem] p-10 min-h-[500px] shadow-2xl relative overflow-hidden"
+              className="border border-white/5 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 min-h-[500px] shadow-2xl relative overflow-hidden"
               style={{ backgroundColor: 'var(--color-proposal-panel)' }}
             >
               <AnimatePresence mode="wait">
@@ -473,7 +473,7 @@ const ProposalView: React.FC = () => {
             whileInView="visible"
             viewport={{ once: true, margin: '-50px' }}
             variants={fadeUp}
-            className="rounded-[3rem] p-12 flex flex-col justify-between shadow-2xl relative overflow-hidden"
+            className="rounded-[2.5rem] p-8 md:p-12 flex flex-col justify-between shadow-2xl relative overflow-hidden"
             style={{ backgroundColor: 'var(--color-proposal-dark)', borderColor: `${brandPrimary}4D`, borderWidth: '1px' }}
           >
             <div className="absolute top-0 left-0 w-full h-1 opacity-40" style={{ background: gradientStyle }}></div>
@@ -550,19 +550,19 @@ const ProposalView: React.FC = () => {
             variants={staggerContainer}
             className="space-y-12"
           >
-            <motion.div variants={fadeUp} className="flex items-center gap-5">
+            <motion.div variants={fadeUp} className="flex flex-col md:flex-row items-center gap-3 md:gap-5 text-center md:text-left">
               <div className="p-3 rounded-xl bg-white/5 shadow-inner">
                 <Clock style={{ color: brandPrimary }} size={22} />
               </div>
-              <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Workflow Estratégico</h3>
+              <h3 className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-white uppercase tracking-tighter">Workflow Estratégico</h3>
             </motion.div>
-            <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-${Math.min(proposal.milestones.length, 6)} gap-6 md:gap-8`}>
+            <div className={`grid grid-cols-2 lg:grid-cols-${Math.min(proposal.milestones.length, 6)} gap-4 md:gap-6 lg:gap-8`}>
               {proposal.milestones.map((m, i) => (
                 <motion.div
                   variants={fadeUp}
                   key={i}
                   whileHover={{ y: -5 }}
-                  className="relative p-10 rounded-[2.5rem] border border-white/5 text-center transition-all group overflow-hidden shadow-xl"
+                  className="relative p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 text-center transition-all group overflow-hidden shadow-xl"
                   style={{ backgroundColor: 'var(--color-proposal-panel)' }}
                 >
                   <div className="absolute -top-1 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-all duration-700" style={{ background: gradientStyle }}></div>
@@ -594,14 +594,14 @@ const ProposalView: React.FC = () => {
             variants={staggerContainer}
             className="space-y-12"
           >
-            <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex items-center gap-5">
+            <motion.div variants={fadeUp} className="flex flex-col md:flex-row items-center gap-3 md:gap-5 text-center md:text-left md:justify-between mb-4">
+              <div className="flex flex-col md:flex-row items-center gap-3 md:gap-5">
                 <div className="p-3 rounded-xl bg-white/5 shadow-inner">
                   <DollarSign style={{ color: brandPrimary }} size={22} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Costos de Infraestructura</h3>
-                  <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">Costos fijos mensuales de operación</p>
+                  <h3 className="text-3xl md:text-4xl lg:text-5xl font-display font-black text-white uppercase tracking-tighter">Costos de Infraestructura</h3>
+                  <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">Costos fijos mensuales de operación</p>
                 </div>
               </div>
               {/* Monthly Total */}
@@ -633,7 +633,7 @@ const ProposalView: React.FC = () => {
                   <div className="absolute -top-1 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-all duration-700" style={{ background: gradientStyle }}></div>
 
                   {/* Provider Badge */}
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-4 md:mb-6">
                     {cost.provider && (
                       <span
                         className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border"
@@ -794,9 +794,9 @@ const ProposalView: React.FC = () => {
             >
               {/* Modal Header */}
               <div className="p-6 md:p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                <h2 className="text-lg md:text-2xl font-display font-black text-white uppercase tracking-wider flex items-center gap-3">
-                  <ShieldCheck style={{ color: brandPrimary }} size={26} />
-                  Contrato de Prestación de Servicios
+                <h2 className="text-base md:text-2xl font-display font-black text-white uppercase tracking-wider flex items-center gap-2 md:gap-3">
+                  <ShieldCheck style={{ color: brandPrimary }} size={22} className="md:w-[26px] md:h-[26px]" />
+                  Contrato de Servicios
                 </h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white transition-colors">
                   <XCircle size={28} />
@@ -829,7 +829,7 @@ const ProposalView: React.FC = () => {
                 </p>
 
                 {/* Signature area inside modal */}
-                <div className="grid md:grid-cols-2 gap-10 pt-6 mt-6 border-t border-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-6 mt-6 border-t border-white/10">
                   <div className="space-y-4">
                     <p className="font-bold text-white uppercase tracking-widest text-xs mb-6">Por EL CLIENTE ({proposal.client_name}):</p>
                     <div className="space-y-1">
@@ -849,7 +849,7 @@ const ProposalView: React.FC = () => {
                         <SignatureCanvas
                           ref={sigCanvasRef}
                           penColor="#f43f5e"
-                          canvasProps={{ className: 'w-full h-32 cursor-crosshair touch-none' }}
+                          canvasProps={{ className: 'w-full h-32 md:h-40 cursor-crosshair touch-none' }}
                           onEnd={() => setIsSignatureEmpty(sigCanvasRef.current?.isEmpty() ?? true)}
                         />
                         {isSignatureEmpty && (
@@ -894,7 +894,7 @@ const ProposalView: React.FC = () => {
                     <p className="font-bold text-white uppercase tracking-widest text-xs mb-6">Por EL DESARROLLADOR (CreAPP):</p>
                     <div className="space-y-2">
                       <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Firma</p>
-                      <div className="bg-white/5 border border-white/10 border-dashed rounded-xl p-4 flex items-center justify-center h-32">
+                      <div className="bg-white/5 border border-white/10 border-dashed rounded-xl p-4 flex items-center justify-center h-28 md:h-32">
                         <img
                           src="/firmaseba.png"
                           alt="Firma Sebastián Maza"
