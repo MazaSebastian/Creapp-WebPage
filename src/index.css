@@ -16,6 +16,12 @@
     --animate-shimmer: shimmer 2s linear infinite;
     --animate-gradient-x: gradient-x 3s ease infinite;
 
+    /* Proposal-specific tokens */
+    --color-proposal-dark: #050505;
+    --color-proposal-panel: #0a0a0a;
+    --color-proposal-brand: #ff007f;
+    --color-proposal-brand2: #9d00ff;
+
     @keyframes fadeIn {
         0% {
             opacity: 0;
