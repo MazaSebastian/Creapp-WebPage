@@ -6,6 +6,7 @@ import type {
   ProposalMilestone,
   ProposalPayment,
   ProposalProjectOption,
+  ProposalInfrastructureCost,
   FullProposal,
 } from './proposalTypes';
 
@@ -22,12 +23,13 @@ export async function getProposalBySlug(slug: string): Promise<FullProposal | nu
 
   if (error || !proposal) return null;
 
-  const [inclusions, exclusions, milestones, payments, projectOptions] = await Promise.all([
+  const [inclusions, exclusions, milestones, payments, projectOptions, infrastructureCosts] = await Promise.all([
     supabase.from('proposal_inclusions').select('*').eq('proposal_id', proposal.id).order('sort_order'),
     supabase.from('proposal_exclusions').select('*').eq('proposal_id', proposal.id).order('sort_order'),
     supabase.from('proposal_milestones').select('*').eq('proposal_id', proposal.id).order('sort_order'),
     supabase.from('proposal_payments').select('*').eq('proposal_id', proposal.id).order('sort_order'),
     supabase.from('proposal_project_options').select('*').eq('proposal_id', proposal.id).order('sort_order'),
+    supabase.from('proposal_infrastructure_costs').select('*').eq('proposal_id', proposal.id).order('sort_order'),
   ]);
 
   return {
@@ -37,6 +39,7 @@ export async function getProposalBySlug(slug: string): Promise<FullProposal | nu
     milestones: (milestones.data || []) as ProposalMilestone[],
     payments: (payments.data || []) as ProposalPayment[],
     project_options: (projectOptions.data || []) as ProposalProjectOption[],
+    infrastructure_costs: (infrastructureCosts.data || []) as ProposalInfrastructureCost[],
   } as FullProposal;
 }
 
@@ -90,7 +93,7 @@ export async function deleteProposal(id: string): Promise<void> {
 // Admin — Child table CRUD (generic pattern)
 // =========================================================
 
-type ChildTable = 'proposal_inclusions' | 'proposal_exclusions' | 'proposal_milestones' | 'proposal_payments' | 'proposal_project_options';
+type ChildTable = 'proposal_inclusions' | 'proposal_exclusions' | 'proposal_milestones' | 'proposal_payments' | 'proposal_project_options' | 'proposal_infrastructure_costs';
 
 export async function upsertChildItems<T extends Record<string, unknown>>(
   table: ChildTable,

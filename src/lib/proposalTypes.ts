@@ -70,10 +70,22 @@ export interface ProposalProjectOption {
   sort_order: number;
 }
 
+export interface ProposalInfrastructureCost {
+  id: string;
+  proposal_id: string;
+  title: string;
+  provider: string;
+  monthly_cost: string;
+  description: string;
+  is_optional: boolean;
+  sort_order: number;
+}
+
 export interface FullProposal extends Proposal {
   inclusions: ProposalInclusion[];
   exclusions: ProposalExclusion[];
   milestones: ProposalMilestone[];
   payments: ProposalPayment[];
   project_options: ProposalProjectOption[];
+  infrastructure_costs: ProposalInfrastructureCost[];
 }

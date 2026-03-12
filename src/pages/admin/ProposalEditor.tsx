@@ -22,6 +22,7 @@ import type {
   ProposalMilestone,
   ProposalPayment,
   ProposalProjectOption,
+  ProposalInfrastructureCost,
 } from '@/lib/proposalTypes';
 
 // =========================================================
@@ -82,6 +83,7 @@ const ProposalEditor: React.FC = () => {
   const [milestones, setMilestones] = useState<Partial<ProposalMilestone>[]>([]);
   const [payments, setPayments] = useState<Partial<ProposalPayment>[]>([]);
   const [projectOptions, setProjectOptions] = useState<Partial<ProposalProjectOption>[]>([]);
+  const [infrastructureCosts, setInfrastructureCosts] = useState<Partial<ProposalInfrastructureCost>[]>([]);
 
   useEffect(() => {
     if (isNew) return;
@@ -106,12 +108,13 @@ const ProposalEditor: React.FC = () => {
       setClientLogoUrl(proposal.client_logo_url || '');
       setStatus(proposal.status);
 
-      const [inc, exc, mil, pay, opt] = await Promise.all([
+      const [inc, exc, mil, pay, opt, infra] = await Promise.all([
         supabase.from('proposal_inclusions').select('*').eq('proposal_id', id).order('sort_order'),
         supabase.from('proposal_exclusions').select('*').eq('proposal_id', id).order('sort_order'),
         supabase.from('proposal_milestones').select('*').eq('proposal_id', id).order('sort_order'),
         supabase.from('proposal_payments').select('*').eq('proposal_id', id).order('sort_order'),
         supabase.from('proposal_project_options').select('*').eq('proposal_id', id).order('sort_order'),
+        supabase.from('proposal_infrastructure_costs').select('*').eq('proposal_id', id).order('sort_order'),
       ]);
 
       setInclusions(inc.data || []);
@@ -119,6 +122,7 @@ const ProposalEditor: React.FC = () => {
       setMilestones(mil.data || []);
       setPayments(pay.data || []);
       setProjectOptions(opt.data || []);
+      setInfrastructureCosts(infra.data || []);
       setLoading(false);
     };
 
@@ -168,6 +172,7 @@ const ProposalEditor: React.FC = () => {
         upsertChildItems('proposal_milestones', proposalId!, milestones as Record<string, unknown>[]),
         upsertChildItems('proposal_payments', proposalId!, payments as Record<string, unknown>[]),
         upsertChildItems('proposal_project_options', proposalId!, projectOptions as Record<string, unknown>[]),
+        upsertChildItems('proposal_infrastructure_costs', proposalId!, infrastructureCosts as Record<string, unknown>[]),
       ]);
 
       navigate('/admin');
@@ -475,6 +480,36 @@ const ProposalEditor: React.FC = () => {
                 />
               </div>
               <button onClick={() => removeItem(projectOptions, setProjectOptions, i)} className="text-slate-600 hover:text-red-400 mt-2 shrink-0"><Trash2 size={14} /></button>
+            </div>
+          ))}
+        </Section>
+
+        {/* Costos de Infraestructura */}
+        <Section
+          title={`Costos de Infraestructura (${infrastructureCosts.length})`}
+          onAdd={() => setInfrastructureCosts([...infrastructureCosts, { title: '', provider: '', monthly_cost: 'USD 0', description: '', is_optional: false }])}
+        >
+          {infrastructureCosts.map((item, i) => (
+            <div key={i} className="flex gap-3 items-start p-4 rounded-xl bg-white/[0.02] border border-white/5">
+              <GripVertical size={16} className="text-slate-700 mt-2 shrink-0" />
+              <div className="flex-1 grid md:grid-cols-3 gap-3">
+                <input type="text" value={item.title || ''} onChange={(e) => updateItem(infrastructureCosts, setInfrastructureCosts, i, 'title', e.target.value)} placeholder="Servicio (ej: Hosting)" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none" />
+                <input type="text" value={item.provider || ''} onChange={(e) => updateItem(infrastructureCosts, setInfrastructureCosts, i, 'provider', e.target.value)} placeholder="Proveedor (ej: Vercel)" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none" />
+                <input type="text" value={item.monthly_cost || ''} onChange={(e) => updateItem(infrastructureCosts, setInfrastructureCosts, i, 'monthly_cost', e.target.value)} placeholder="Costo (ej: USD 20/mes)" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none font-mono" />
+                <textarea value={item.description || ''} onChange={(e) => updateItem(infrastructureCosts, setInfrastructureCosts, i, 'description', e.target.value)} placeholder="Descripción del servicio" rows={2} className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none resize-none md:col-span-2" />
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={item.is_optional || false}
+                      onChange={(e) => updateItem(infrastructureCosts, setInfrastructureCosts, i, 'is_optional', e.target.checked)}
+                      className="accent-primary w-4 h-4"
+                    />
+                    <span className="text-xs text-slate-400 uppercase tracking-widest font-bold">Opcional</span>
+                  </label>
+                </div>
+              </div>
+              <button onClick={() => removeItem(infrastructureCosts, setInfrastructureCosts, i)} className="text-slate-600 hover:text-red-400 mt-2 shrink-0"><Trash2 size={14} /></button>
             </div>
           ))}
         </Section>

@@ -585,6 +585,88 @@ const ProposalView: React.FC = () => {
           </motion.section>
         )}
 
+        {/* Costos de Infraestructura */}
+        {proposal.infrastructure_costs && proposal.infrastructure_costs.length > 0 && (
+          <motion.section
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={staggerContainer}
+            className="space-y-12"
+          >
+            <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className="p-3 rounded-xl bg-white/5 shadow-inner">
+                  <DollarSign style={{ color: brandPrimary }} size={22} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-display font-black text-white uppercase tracking-tighter">Costos de Infraestructura</h3>
+                  <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-1">Costos fijos mensuales de operación</p>
+                </div>
+              </div>
+              {/* Monthly Total */}
+              {(() => {
+                const totalMonthly = proposal.infrastructure_costs
+                  .filter(c => !c.is_optional)
+                  .reduce((sum, c) => {
+                    const match = c.monthly_cost.match(/[\d.,]+/);
+                    return sum + (match ? parseFloat(match[0].replace(',', '.')) : 0);
+                  }, 0);
+                return totalMonthly > 0 ? (
+                  <div className="flex items-center gap-4 px-6 py-3 rounded-2xl border border-white/5" style={{ backgroundColor: `${brandPrimary}0D` }}>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimado mensual</span>
+                    <span className="text-xl font-display font-black" style={{ color: brandPrimary }}>USD {totalMonthly.toFixed(0)}/mes</span>
+                  </div>
+                ) : null;
+              })()}
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {proposal.infrastructure_costs.map((cost, i) => (
+                <motion.div
+                  variants={fadeUp}
+                  key={i}
+                  whileHover={{ y: -5 }}
+                  className="relative p-8 rounded-[2rem] border border-white/5 transition-all group overflow-hidden shadow-xl"
+                  style={{ backgroundColor: 'var(--color-proposal-panel)' }}
+                >
+                  <div className="absolute -top-1 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-all duration-700" style={{ background: gradientStyle }}></div>
+
+                  {/* Provider Badge */}
+                  <div className="flex items-center justify-between mb-6">
+                    {cost.provider && (
+                      <span
+                        className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border"
+                        style={{ backgroundColor: `${brandPrimary}0D`, color: brandPrimary, borderColor: `${brandPrimary}26` }}
+                      >
+                        {cost.provider}
+                      </span>
+                    )}
+                    {cost.is_optional && (
+                      <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        Opcional
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Cost */}
+                  <p className="text-2xl font-display font-black tracking-tight mb-2" style={{ color: brandPrimary }}>
+                    {cost.monthly_cost}
+                  </p>
+
+                  {/* Title */}
+                  <h4 className="text-base font-display font-black text-white tracking-tight mb-3">{cost.title}</h4>
+
+                  {/* Description */}
+                  {cost.description && (
+                    <p className="text-xs text-slate-500 leading-relaxed font-light">{cost.description}</p>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
         {/* Términos y Garantía */}
         <motion.section
           initial="hidden"

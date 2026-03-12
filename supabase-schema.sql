@@ -97,6 +97,18 @@ CREATE TABLE proposal_project_options (
   sort_order INT NOT NULL DEFAULT 0
 );
 
+-- PROPOSAL INFRASTRUCTURE COSTS (recurring monthly costs the client assumes)
+CREATE TABLE proposal_infrastructure_costs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  proposal_id UUID NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  provider TEXT NOT NULL DEFAULT '',
+  monthly_cost TEXT NOT NULL DEFAULT 'USD 0',
+  description TEXT NOT NULL DEFAULT '',
+  is_optional BOOLEAN NOT NULL DEFAULT false,
+  sort_order INT NOT NULL DEFAULT 0
+);
+
 -- =========================================================
 -- Row Level Security (RLS)
 -- =========================================================
@@ -107,6 +119,7 @@ ALTER TABLE proposal_exclusions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proposal_milestones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proposal_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proposal_project_options ENABLE ROW LEVEL SECURITY;
+ALTER TABLE proposal_infrastructure_costs ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for published proposals (for the client-facing view)
 CREATE POLICY "Public can read published proposals"
@@ -131,6 +144,10 @@ CREATE POLICY "Public can read payments of published proposals"
 
 CREATE POLICY "Public can read project options of published proposals"
   ON proposal_project_options FOR SELECT
+  USING (proposal_id IN (SELECT id FROM proposals WHERE status IN ('published','signed')));
+
+CREATE POLICY "Public can read infrastructure costs of published proposals"
+  ON proposal_infrastructure_costs FOR SELECT
   USING (proposal_id IN (SELECT id FROM proposals WHERE status IN ('published','signed')));
 
 -- Authenticated (admin) full access
@@ -158,6 +175,10 @@ CREATE POLICY "Admin full access to project options"
   ON proposal_project_options FOR ALL
   USING (auth.role() = 'authenticated');
 
+CREATE POLICY "Admin full access to infrastructure costs"
+  ON proposal_infrastructure_costs FOR ALL
+  USING (auth.role() = 'authenticated');
+
 -- =========================================================
 -- Indexes for performance
 -- =========================================================
@@ -168,3 +189,4 @@ CREATE INDEX idx_exclusions_proposal ON proposal_exclusions(proposal_id);
 CREATE INDEX idx_milestones_proposal ON proposal_milestones(proposal_id);
 CREATE INDEX idx_payments_proposal ON proposal_payments(proposal_id);
 CREATE INDEX idx_project_options_proposal ON proposal_project_options(proposal_id);
+CREATE INDEX idx_infrastructure_costs_proposal ON proposal_infrastructure_costs(proposal_id);
