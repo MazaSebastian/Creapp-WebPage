@@ -193,12 +193,12 @@ const ProposalView: React.FC = () => {
         initial="hidden"
         animate="visible"
         variants={fadeUp}
-        className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-10 relative z-10"
+        className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center mb-16 gap-8 md:gap-10 relative z-10"
       >
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5 text-center md:text-left">
           <CreAPPLogo />
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className="h-10 w-[2px] rounded-full shadow-md" style={{ backgroundColor: `${brandPrimary}99` }}></div>
+          <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4">
+            <div className="h-[2px] w-10 md:h-10 md:w-[2px] rounded-full shadow-md" style={{ backgroundColor: `${brandPrimary}99` }}></div>
             <div className="flex flex-col">
               <p className="text-[13px] uppercase tracking-[0.45em] font-black leading-none mb-2" style={{ color: brandPrimary }}>
                 Propuesta Técnica
@@ -207,12 +207,12 @@ const ProposalView: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="flex flex-col md:items-end w-full md:w-auto mt-6 md:mt-0">
+        <div className="flex flex-col items-center md:items-end w-full md:w-auto mt-2 md:mt-0 text-center md:text-right">
           {proposal.client_logo_url && (
-            <img src={proposal.client_logo_url} alt={proposal.client_name} className="h-8 md:h-12 w-auto object-contain mb-2 origin-left md:origin-right" />
+            <img src={proposal.client_logo_url} alt={proposal.client_name} className="h-10 md:h-12 w-auto object-contain mb-3 md:mb-2 origin-center md:origin-right" />
           )}
           {!proposal.client_logo_url && (
-            <h2 className="text-xl md:text-2xl font-display font-black text-white tracking-tight mb-2 truncate max-w-full">{proposal.client_name}</h2>
+            <h2 className="text-2xl md:text-2xl font-display font-black text-white tracking-tight mb-2 truncate max-w-full">{proposal.client_name}</h2>
           )}
           <div className="flex gap-4 mt-1 text-[11px] text-slate-600 uppercase tracking-widest font-black">
             <span>{proposal.date}</span>
