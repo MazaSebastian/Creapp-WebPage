@@ -74,6 +74,15 @@ const ProposalView: React.FC = () => {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  // Dynamically update document title based on proposal data
+  useEffect(() => {
+    if (proposal) {
+      document.title = `Propuesta Comercial | ${proposal.client_name}`;
+    } else {
+      document.title = 'CreAPP - Propuesta Comercial Interactiva';
+    }
+  }, [proposal]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--color-proposal-dark)] flex items-center justify-center">
