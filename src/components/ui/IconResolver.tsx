@@ -44,11 +44,12 @@ interface IconResolverProps {
   name: string;
   size?: number;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-const IconResolver: React.FC<IconResolverProps> = ({ name, size = 20, className }) => {
+const IconResolver: React.FC<IconResolverProps> = ({ name, size = 20, className, style }) => {
   const Icon = iconMap[name] || CheckCircle2;
-  return <Icon size={size} className={className} />;
+  return <Icon size={size} className={className} style={style as any} />;
 };
 
 export default IconResolver;

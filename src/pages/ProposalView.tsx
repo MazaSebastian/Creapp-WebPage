@@ -20,6 +20,8 @@ import SignatureCanvas from 'react-signature-canvas';
 import { getProposalBySlug } from '@/lib/proposalService';
 import type { FullProposal } from '@/lib/proposalTypes';
 import IconResolver from '@/components/ui/IconResolver';
+import ContractRenderer from '@/components/ui/ContractRenderer';
+import { generateAndUploadContractBox } from '@/lib/pdfService';
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -50,6 +52,12 @@ const ProposalView: React.FC = () => {
   const [clientRole, setClientRole] = useState('');
   const sigCanvasRef = useRef<SignatureCanvas>(null);
   const [isSignatureEmpty, setIsSignatureEmpty] = useState(true);
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [isContractTextValid, setIsContractTextValid] = useState(true);
+
+  // New states for PDF generation flow
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfSuccessUrl, setPdfSuccessUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -112,9 +120,9 @@ const ProposalView: React.FC = () => {
     }
     return (
       <img
-        src="/logocreapp.png"
+        src="/logocreapp_new.png"
         alt="CreAPP Logo"
-        className="h-24 md:h-32 w-auto object-contain transition-all duration-700"
+        className="h-28 md:h-40 w-auto object-contain transition-all duration-700"
         onError={() => setLogoError(true)}
       />
     );
@@ -135,33 +143,34 @@ const ProposalView: React.FC = () => {
     }
   };
 
-  const handleFinalSignature = (e: React.FormEvent) => {
+  const handleFinalSignature = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientRepName || !clientDNI || !clientRole || isSignatureEmpty) return;
+    if (!clientRepName || !clientDNI || !clientRole || isSignatureEmpty || !isContractTextValid) return;
+    if (!proposal) return;
 
-    setIsConfirmed(true);
-    setIsModalOpen(false);
+    setIsGeneratingPDF(true);
+    
+    // Wait for React to flush the state to the DOM so the UI swaps the inputs for the static text spans
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    const emailData = {
-      to: 'admin@creapp.com.ar',
-      subject: `Firma de Contrato Legal - ${proposal.client_name}`,
-      body:
-        `Por la presente, yo, ${clientRepName} (DNI/CUIT: ${clientDNI}), en mi carácter de ${clientRole} y en representación de ${proposal.client_name}, confirmo la lectura, aceptación y firma del Contrato de Prestación de Servicios de Desarrollo de Software con CreAPP Lab.\n\n` +
-        `Detalles del Proyecto:\n` +
-        `- Fecha de Aprobación: ${new Date().toLocaleDateString()}\n` +
-        `- Inversión Final: ${proposal.total_value}\n\n` +
-        `Aguardamos las instrucciones para dar inicio formal al cronograma de trabajo (Kick-off).\n\n` +
-        `Saludos cordiales,`,
-    };
+    try {
+      // The generateAndUploadContractBox requires an ID to target the DOM element.
+      // E.g 'contract-content-box'. It handles canvas screenshotting, jsPDF generation, and Supabase upload.
+      const url = await generateAndUploadContractBox(
+        'contract-content-box',
+        proposal.id,
+        proposal.slug
+      );
+      
+      setPdfSuccessUrl(url);
+      setIsConfirmed(true);
 
-    const mailtoUrl = `mailto:${emailData.to}?subject=${encodeURIComponent(emailData.subject)}&body=${encodeURIComponent(emailData.body)}`;
-
-    setTimeout(() => {
-      document.getElementById('signature-section')?.scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => {
-        window.open(mailtoUrl, '_blank');
-      }, 600);
-    }, 100);
+    } catch (error) {
+      console.error("Failed to generate and upload contract:", error);
+      alert("Hubo un error al procesar el contrato. Por favor, intente nuevamente.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   // Helper: get style variant classes for project option cards
@@ -236,7 +245,7 @@ const ProposalView: React.FC = () => {
             style={{ backgroundColor: `${brandPrimary}1A` }}
           ></div>
           <div className="relative z-10 grid md:grid-cols-2 gap-16 items-center">
-            <div>
+            <div className="text-center md:text-left flex flex-col items-center md:items-start">
               <div
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest mb-8 border"
                 style={{ backgroundColor: `${brandPrimary}1A`, color: brandPrimary, borderColor: `${brandPrimary}33` }}
@@ -244,13 +253,13 @@ const ProposalView: React.FC = () => {
                 <Rocket size={14} className="fill-current" />
                 MÁS QUE UNA APP
               </div>
-              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white mb-6 md:mb-10 leading-[1.05] tracking-tighter">
+              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white mb-6 md:mb-10 leading-[1.05] tracking-tighter mx-auto md:mx-0">
                 Llevamos tu sistema de gestión <br />
                 <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>
                   al próximo nivel.
                 </span>
               </h3>
-              <p className="text-slate-400 text-lg md:text-xl leading-relaxed font-light max-w-lg">{proposal.description}</p>
+              <p className="text-slate-400 text-lg md:text-xl leading-relaxed font-light max-w-lg mx-auto md:mx-0">{proposal.description}</p>
             </div>
             <div className="hidden md:block">
               <motion.div
@@ -403,34 +412,40 @@ const ProposalView: React.FC = () => {
                     transition={{ duration: 0.3 }}
                     className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 relative z-10"
                   >
-                    {proposal.inclusions.map((item, i) => (
-                      <motion.div
-                        whileHover={{ scale: 1.03 }}
-                        key={i}
-                        className="relative overflow-hidden flex flex-col justify-center p-5 md:p-7 rounded-3xl bg-white/[0.015] hover:bg-white/[0.05] transition-all border border-transparent group cursor-default shadow-sm"
-                        style={{ ['--hover-border' as string]: `${brandPrimary}33` }}
-                      >
-                        <div className="flex gap-6 relative z-10 group-hover:opacity-0 transition-opacity duration-500 items-center">
-                          <div className="shrink-0 rounded-2xl flex items-center justify-center w-14 h-14 shadow-inner" style={{ backgroundColor: `${brandPrimary}0D` }}>
-                            <IconResolver name={item.icon_name} size={20} className="" style={{ color: brandPrimary }} />
+                    {proposal.inclusions.map((item, i) => {
+                      const isTooltipActive = activeTooltip === `inclusion-${i}`;
+                      return (
+                        <motion.div
+                          whileHover={{ scale: 1.03 }}
+                          key={i}
+                          onClick={() => setActiveTooltip(isTooltipActive ? null : `inclusion-${i}`)}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                          className="relative overflow-hidden p-5 md:p-7 rounded-3xl bg-white/[0.015] hover:bg-white/[0.05] transition-all border border-transparent group cursor-pointer shadow-sm grid [grid-template-areas:'stack'] items-center"
+                          style={{ ['--hover-border' as string]: `${brandPrimary}33` }}
+                        >
+                          <div className={`flex gap-6 relative z-10 transition-opacity duration-500 items-center [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : 'group-hover:opacity-0'}`}>
+                            <div className="shrink-0 rounded-2xl flex items-center justify-center w-14 h-14 shadow-inner" style={{ backgroundColor: `${brandPrimary}0D` }}>
+                              <IconResolver name={item.icon_name} size={20} className="" style={{ color: brandPrimary }} />
+                            </div>
+                            <div>
+                              <h4 className="font-display font-bold text-lg text-white mb-1.5 flex items-center gap-2 tracking-tight">
+                                {item.title}
+                                <ChevronRight size={16} style={{ color: brandPrimary }} className="opacity-60" />
+                              </h4>
+                              <p className="text-xs text-slate-500 leading-relaxed uppercase tracking-widest font-bold opacity-80">{item.description}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-display font-bold text-lg text-white mb-1.5 flex items-center gap-2 tracking-tight">
-                              {item.title}
-                              <ChevronRight size={16} style={{ color: brandPrimary }} className="opacity-60" />
-                            </h4>
-                            <p className="text-xs text-slate-500 leading-relaxed uppercase tracking-widest font-bold opacity-80">{item.description}</p>
+                          <div className={`flex flex-col justify-center transition-all duration-500 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none'}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ backgroundColor: brandPrimary }}></div>
+                              <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: brandPrimary }}>Detalle Técnico</p>
+                            </div>
+                            <p className="text-[13px] text-slate-300 font-light leading-relaxed">{item.tooltip}</p>
                           </div>
-                        </div>
-                        <div className="absolute inset-0 z-20 backdrop-blur-md p-6 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0" style={{ backgroundColor: 'var(--color-proposal-dark)', opacity: undefined }}>
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ backgroundColor: brandPrimary }}></div>
-                            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: brandPrimary }}>Detalle Técnico</p>
-                          </div>
-                          <p className="text-[13px] text-slate-300 font-light leading-relaxed">{item.tooltip}</p>
-                        </div>
-                      </motion.div>
-                    ))}
+                          <div className={`absolute inset-0 z-[15] backdrop-blur-md transition-opacity duration-500 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} style={{ backgroundColor: 'var(--color-proposal-dark)' }}></div>
+                        </motion.div>
+                      );
+                    })}
                   </motion.div>
                 ) : (
                   <motion.div
@@ -441,25 +456,31 @@ const ProposalView: React.FC = () => {
                     transition={{ duration: 0.3 }}
                     className="space-y-4 md:space-y-5 relative z-10"
                   >
-                    {proposal.exclusions.map((item, i) => (
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        key={i}
-                        className="relative overflow-hidden flex flex-col justify-center p-6 rounded-[1.5rem] bg-red-500/[0.02] border border-red-500/10 hover:border-red-500/20 transition-all group cursor-default"
-                      >
-                        <div className="flex items-center gap-6 relative z-10 group-hover:opacity-0 transition-opacity duration-500">
-                          <XCircle size={22} className="text-red-500 shrink-0 opacity-60" />
-                          <p className="text-base text-slate-400 tracking-wide font-light italic">{item.title}</p>
-                        </div>
-                        <div className="absolute inset-0 z-20 bg-[#160505]/95 backdrop-blur-md p-6 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]"></div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Aclaración</p>
+                    {proposal.exclusions.map((item, i) => {
+                      const isTooltipActive = activeTooltip === `exclusion-${i}`;
+                      return (
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          key={i}
+                          onClick={() => setActiveTooltip(isTooltipActive ? null : `exclusion-${i}`)}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                          className="relative overflow-hidden p-6 rounded-[1.5rem] bg-red-500/[0.02] border border-red-500/10 hover:border-red-500/20 transition-all group cursor-pointer grid [grid-template-areas:'stack'] items-center"
+                        >
+                          <div className={`flex items-center gap-6 relative z-10 transition-opacity duration-500 [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : 'group-hover:opacity-0'}`}>
+                            <XCircle size={22} className="text-red-500 shrink-0 opacity-60" />
+                            <p className="text-base text-slate-400 tracking-wide font-light italic">{item.title}</p>
                           </div>
-                          <p className="text-[13px] text-red-200/80 font-light leading-relaxed">{item.tooltip}</p>
-                        </div>
-                      </motion.div>
-                    ))}
+                          <div className={`flex flex-col justify-center transition-all duration-500 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none'}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]"></div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Aclaración</p>
+                            </div>
+                            <p className="text-[13px] text-red-200/80 font-light leading-relaxed">{item.tooltip}</p>
+                          </div>
+                          <div className={`absolute inset-0 z-[15] backdrop-blur-md bg-[#160505]/95 transition-opacity duration-500 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}></div>
+                        </motion.div>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -477,22 +498,21 @@ const ProposalView: React.FC = () => {
           >
             <div className="absolute top-0 left-0 w-full h-1 opacity-40" style={{ background: gradientStyle }}></div>
             <div>
-              <div className="flex items-center gap-4 mb-10" style={{ color: brandPrimary }}>
+              <div className="flex items-center justify-center md:justify-start gap-4 mb-10" style={{ color: brandPrimary }}>
                 <div className="p-2.5 rounded-xl shadow-inner" style={{ backgroundColor: `${brandPrimary}1A` }}>
                   <DollarSign size={20} />
                 </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.35em]">Total Project Value</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.35em]">Presupuesto Final</span>
               </div>
-              <div className="mb-12">
+              <div className="mb-12 text-center md:text-left">
                 <h4 className="text-7xl font-display font-black text-white tracking-tighter">{proposal.total_value}</h4>
-                <div className="flex items-center gap-3 mt-4">
-                  <span className="h-[1.5px] w-10 rounded-full" style={{ backgroundColor: `${brandPrimary}99` }}></span>
-                  <p className="text-slate-500 text-[11px] font-black uppercase tracking-[0.2em] italic">Inversión Final</p>
+                <div className="flex items-center justify-center md:justify-start mt-4">
+                  <p className="text-slate-500 text-[11px] font-black uppercase tracking-[0.2em] italic">Costo de desarrollo</p>
                 </div>
               </div>
 
               <div className="space-y-5">
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em] mb-6 px-1">Estructura de Desembolsos</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em] mb-6 px-1 text-center md:text-left">Estructura de Desembolsos</p>
                 {proposal.payments.map((p, i) => (
                   <div
                     key={i}
@@ -593,8 +613,8 @@ const ProposalView: React.FC = () => {
             variants={staggerContainer}
             className="space-y-12"
           >
-            <motion.div variants={fadeUp} className="flex flex-col md:flex-row items-center gap-3 md:gap-5 text-center md:text-left md:justify-between mb-4">
-              <div className="flex flex-col md:flex-row items-center gap-3 md:gap-5">
+            <motion.div variants={fadeUp} className="flex flex-col md:flex-row items-center gap-6 md:gap-5 text-center md:text-left md:justify-between mb-4">
+              <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5">
                 <div className="p-3 rounded-xl bg-white/5 shadow-inner">
                   <DollarSign style={{ color: brandPrimary }} size={22} />
                 </div>
@@ -612,9 +632,9 @@ const ProposalView: React.FC = () => {
                     return sum + (match ? parseFloat(match[0].replace(',', '.')) : 0);
                   }, 0);
                 return totalMonthly > 0 ? (
-                  <div className="flex items-center gap-4 px-6 py-3 rounded-2xl border border-white/5" style={{ backgroundColor: `${brandPrimary}0D` }}>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimado mensual</span>
-                    <span className="text-xl font-display font-black" style={{ color: brandPrimary }}>USD {totalMonthly.toFixed(0)}/mes</span>
+                  <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 px-6 py-4 md:py-3 rounded-2xl border border-white/5" style={{ backgroundColor: `${brandPrimary}0D` }}>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center md:text-left">Estimado mensual</span>
+                    <span className="text-2xl md:text-xl font-display font-black" style={{ color: brandPrimary }}>USD {totalMonthly.toFixed(0)}/mes</span>
                   </div>
                 ) : null;
               })()}
@@ -626,39 +646,39 @@ const ProposalView: React.FC = () => {
                   variants={fadeUp}
                   key={i}
                   whileHover={{ y: -5 }}
-                  className="relative p-8 rounded-[2rem] border border-white/5 transition-all group overflow-hidden shadow-xl"
+                  className="relative p-8 rounded-[2rem] border border-white/5 transition-all group overflow-hidden shadow-xl flex flex-col items-center text-center md:items-start md:text-left"
                   style={{ backgroundColor: 'var(--color-proposal-panel)' }}
                 >
                   <div className="absolute -top-1 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-all duration-700" style={{ background: gradientStyle }}></div>
 
                   {/* Provider Badge */}
-                  <div className="flex items-center justify-between mb-4 md:mb-6">
+                  <div className="flex items-center justify-center md:justify-between w-full mb-6 gap-2 flex-wrap">
                     {cost.provider && (
                       <span
-                        className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border"
+                        className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border"
                         style={{ backgroundColor: `${brandPrimary}0D`, color: brandPrimary, borderColor: `${brandPrimary}26` }}
                       >
                         {cost.provider}
                       </span>
                     )}
                     {cost.is_optional && (
-                      <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      <span className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-400 border border-amber-500/20">
                         Opcional
                       </span>
                     )}
                   </div>
 
                   {/* Cost */}
-                  <p className="text-2xl font-display font-black tracking-tight mb-2" style={{ color: brandPrimary }}>
+                  <p className="text-3xl md:text-2xl font-display font-black tracking-tight mb-2" style={{ color: brandPrimary }}>
                     {cost.monthly_cost}
                   </p>
 
                   {/* Title */}
-                  <h4 className="text-base font-display font-black text-white tracking-tight mb-3">{cost.title}</h4>
+                  <h4 className="text-xl md:text-base font-display font-black text-white tracking-tight mb-3">{cost.title}</h4>
 
                   {/* Description */}
                   {cost.description && (
-                    <p className="text-xs text-slate-500 leading-relaxed font-light">{cost.description}</p>
+                    <p className="text-[13px] md:text-xs text-slate-400 md:text-slate-500 leading-relaxed font-light">{cost.description}</p>
                   )}
                 </motion.div>
               ))}
@@ -674,9 +694,9 @@ const ProposalView: React.FC = () => {
           variants={fadeUp}
           className="grid grid-cols-1 md:grid-cols-2 gap-10"
         >
-          <div className="p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border border-white/5 shadow-2xl relative group overflow-hidden" style={{ backgroundColor: 'var(--color-proposal-panel)' }}>
+          <div className="p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border border-white/5 shadow-2xl relative group overflow-hidden flex flex-col items-center text-center md:items-start md:text-left" style={{ backgroundColor: 'var(--color-proposal-panel)' }}>
             <div className="absolute bottom-0 left-0 w-full h-[3px] bg-emerald-500/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-1000"></div>
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-5 mb-6 md:mb-8">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5 mb-6 md:mb-8">
               <div className="p-3 rounded-2xl bg-emerald-500/10 shadow-inner w-fit"><ShieldCheck className="text-emerald-500" size={22} /></div>
               <h4 className="font-black text-white uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-[11px] underline decoration-emerald-500/40 underline-offset-[12px] decoration-2">Garantía de Código</h4>
             </div>
@@ -685,9 +705,9 @@ const ProposalView: React.FC = () => {
               Garantizamos la estabilidad operativa tras el despliegue final.
             </p>
           </div>
-          <div className="p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] bg-[#0d0d0d] border border-white/5 shadow-2xl relative group overflow-hidden">
+          <div className="p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] bg-[#0d0d0d] border border-white/5 shadow-2xl relative group overflow-hidden flex flex-col items-center text-center md:items-start md:text-left">
             <div className="absolute bottom-0 left-0 w-full h-[3px] bg-blue-500/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-1000"></div>
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-5 mb-6 md:mb-8">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5 mb-6 md:mb-8">
               <div className="p-3 rounded-2xl bg-blue-500/10 shadow-inner w-fit"><FileText className="text-blue-500" size={22} /></div>
               <h4 className="font-black text-white uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-[11px] underline decoration-blue-500/40 underline-offset-[12px] decoration-2">Rondas de Optimización</h4>
             </div>
@@ -708,7 +728,7 @@ const ProposalView: React.FC = () => {
           variants={fadeUp}
           className="pt-24 border-t border-white/10"
         >
-          <div className="flex flex-col gap-24 max-w-2xl mx-auto">
+          <div className="flex flex-col gap-16 md:gap-24 max-w-2xl mx-auto">
             <div className="space-y-8 text-center">
               <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] px-2 text-center">
                 Aceptación {proposal.client_name}
@@ -751,7 +771,7 @@ const ProposalView: React.FC = () => {
                 )}
               </AnimatePresence>
             </div>
-            <div className="flex flex-col items-center justify-center pb-6">
+            <div className="flex flex-col items-center justify-center">
               <div className="text-center">
                 <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.5em] mb-4 px-2">Validación CreAPP</p>
                 <div className="relative mb-4 inline-block">
@@ -768,13 +788,14 @@ const ProposalView: React.FC = () => {
         </motion.section>
       </main>
 
-      <footer className="max-w-6xl mx-auto py-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+      <footer className="max-w-6xl mx-auto py-10 md:py-20 border-t border-white/5 flex flex-col md:flex-row justify-center md:justify-between items-center gap-6 md:gap-8 mt-10 md:mt-0">
         <div className="opacity-20 hover:opacity-100 transition-all duration-1000">
           <CreAPPLogo />
         </div>
-        <p className="text-slate-700 text-[10px] tracking-[0.6em] uppercase font-black text-center">
-          © 2026 CreAPP Lab • Elevando el estándar tecnológico
-        </p>
+        <div className="flex flex-col items-center md:items-end gap-2 text-slate-700 text-[10px] tracking-[0.6em] uppercase font-black text-center md:text-right">
+          <p>© 2026 CreAPP Lab</p>
+          <p>Elevando el estándar tecnológico</p>
+        </div>
       </footer>
 
       {/* Interactive Legal Contract Modal */}
@@ -803,133 +824,212 @@ const ProposalView: React.FC = () => {
                 </button>
               </div>
 
-              {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto p-6 md:p-10 text-slate-300 text-sm md:text-base leading-relaxed font-light space-y-6">
-                <p className="leading-loose">
-                  En la localidad de {proposal.location}, a los {new Date().getDate()} días del mes de {proposal.date}, se reúnen por
-                  una parte {proposal.client_name}, en adelante denominado "EL CLIENTE", representado por
-                  <input
-                    type="text"
-                    placeholder="Escriba su Nombre"
-                    value={clientRepName}
-                    onChange={(e) => setClientRepName(e.target.value)}
-                    className="mx-2 bg-transparent border-b-2 font-bold focus:outline-none text-center placeholder-opacity-30 transition-colors w-48 text-sm"
-                    style={{ borderColor: `${brandPrimary}66`, color: brandPrimary }}
-                  />
-                  , con DNI/CUIT N°
-                  <input
-                    type="text"
-                    placeholder="Escriba su DNI/CUIT"
-                    value={clientDNI}
-                    onChange={(e) => setClientDNI(e.target.value)}
-                    className="mx-2 bg-transparent border-b-2 font-bold focus:outline-none text-center placeholder-opacity-30 transition-colors w-48 text-sm"
-                    style={{ borderColor: `${brandPrimary}66`, color: brandPrimary }}
-                  />
-                  ; y por la otra parte Creapp, representada por Sebastián Maza, en adelante denominado "EL DESARROLLADOR".
-                </p>
+              {/* PDF Loading Overlay (Positioned outside scroll to lock viewport) */}
+              <AnimatePresence>
+                {isGeneratingPDF && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-50 bg-[#050505]/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
+                  >
+                    <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mb-6" style={{ borderColor: brandPrimary, borderTopColor: 'transparent' }}></div>
+                    <h3 className="text-xl font-display font-black text-white mb-2 tracking-tight">Generando Documento Legal Criptográfico...</h3>
+                    <p className="text-sm text-slate-400 font-light">Este proceso puede demorar unos segundos para aplicar la seguridad necesaria.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                {/* Signature area inside modal */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 pt-6 mt-6 border-t border-white/10">
-                  <div className="space-y-4">
-                    <p className="font-bold text-white uppercase tracking-widest text-xs mb-6">Por EL CLIENTE ({proposal.client_name}):</p>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs text-slate-500 uppercase tracking-widest">Firma</p>
-                        {!isSignatureEmpty && (
-                          <button
-                            onClick={clearSignature}
-                            className="text-[10px] hover:text-white flex items-center gap-1 uppercase tracking-widest transition-colors"
-                            style={{ color: brandPrimary }}
-                          >
-                            <Eraser size={12} /> Limpiar
-                          </button>
-                        )}
-                      </div>
-                      <div className="bg-white/5 border border-white/10 border-dashed rounded-xl overflow-hidden relative">
-                        <SignatureCanvas
-                          ref={sigCanvasRef}
-                          penColor="#f43f5e"
-                          canvasProps={{ className: 'w-full h-32 md:h-40 cursor-crosshair touch-none' }}
-                          onEnd={() => setIsSignatureEmpty(sigCanvasRef.current?.isEmpty() ?? true)}
-                        />
-                        {isSignatureEmpty && (
-                          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            <p className="text-slate-600/50 text-xs uppercase tracking-widest font-black rotate-[-5deg]">Firmar aquí</p>
-                          </div>
-                        )}
-                      </div>
+              {/* PDF Success State */}
+              <AnimatePresence>
+                {pdfSuccessUrl && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute inset-0 z-50 bg-[#050505] flex flex-col items-center justify-center p-6 md:p-12 text-center"
+                  >
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-2xl" style={{ backgroundColor: `${brandPrimary}15` }}>
+                      <CheckCircle2 size={40} style={{ color: brandPrimary }} />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500 uppercase tracking-widest block">Aclaración (Nombre Completo)</label>
-                      <input
-                        type="text"
-                        placeholder="Ej. Juan Pérez"
-                        value={clientRepName}
-                        onChange={(e) => setClientRepName(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-600 focus:outline-none transition-colors"
-                      />
+                    <h3 className="text-2xl md:text-3xl font-display font-black text-white mb-4 tracking-tighter">Contrato Firmado Exitosamente</h3>
+                    <p className="text-slate-400 text-sm md:text-base max-w-md mx-auto mb-10 leading-relaxed">
+                      El ecosistema digital ya está en marcha. Hemos guardado una copia cifrada del contrato en nuestros servidores.
+                    </p>
+                    
+                    <div className="space-y-4 w-full max-w-sm">
+                      <a
+                        href={pdfSuccessUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl border transition-all text-sm font-bold uppercase tracking-widest"
+                        style={{ borderColor: `${brandPrimary}40`, color: brandPrimary, backgroundColor: `${brandPrimary}0A` }}
+                      >
+                        <FileText size={18} />
+                        Descargar PDF
+                      </a>
+                      <button
+                        onClick={() => setIsModalOpen(false)}
+                        className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-white text-sm font-bold uppercase tracking-widest text-center"
+                      >
+                        Cerrar Contrato
+                      </button>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500 uppercase tracking-widest block">DNI / CUIT</label>
-                      <input
-                        type="text"
-                        placeholder="Ej. 20-12345678-9"
-                        value={clientDNI}
-                        onChange={(e) => setClientDNI(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-600 focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500 uppercase tracking-widest block">Cargo</label>
-                      <input
-                        type="text"
-                        placeholder="Ej. CEO / Director Organizacional"
-                        value={clientRole}
-                        onChange={(e) => setClientRole(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-600 focus:outline-none transition-colors"
-                      />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Modal Body & Footer Wrapper to handle scrolling */}
+              <div className="flex-1 overflow-y-auto flex flex-col relative" id="contract-content-box">
+
+                {/* PDF Cover Page Header (Only visible in generated PDF) */}
+                {isGeneratingPDF && (
+                  <div className="w-full flex justify-center items-center pt-24 pb-16 bg-[#050505] border-b border-white/10 mb-4">
+                    <div className="flex flex-col items-center">
+                      <img src="/logocreapp_new.png" alt="CreAPP Logo" className="h-20 md:h-28 mb-10 object-contain" />
+                      <h1 className="text-2xl md:text-4xl font-display font-black text-white uppercase tracking-[0.2em] text-center">
+                        Contrato de Servicios
+                      </h1>
+                      <div className="h-1 w-24 mt-8 rounded-full" style={{ background: gradientStyle }}></div>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <p className="font-bold text-white uppercase tracking-widest text-xs mb-6">Por EL DESARROLLADOR (CreAPP):</p>
-                    <div className="space-y-2">
-                      <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Firma</p>
-                      <div className="bg-white/5 border border-white/10 border-dashed rounded-xl p-4 flex items-center justify-center h-28 md:h-32">
-                        <img
-                          src="/firmaseba.png"
-                          alt="Firma Sebastián Maza"
-                          className="h-full w-auto object-contain"
-                          style={{ filter: 'brightness(0) saturate(100%) invert(35%) sepia(81%) saturate(4145%) hue-rotate(336deg) brightness(96%) contrast(96%)' }}
-                        />
+                )}
+
+                {/* Modal Body */}
+                <div className="flex-1 p-6 md:p-10 text-slate-300 text-sm md:text-base leading-relaxed font-light space-y-6 text-center md:text-left">
+                  <ContractRenderer
+                    template={proposal.contract_text || `En la localidad de {location}, a los {date} días del mes, se reúnen por una parte {client_name}, en adelante denominado "EL CLIENTE", representado por [input:Escriba su Nombre], con DNI/CUIT N° [input:Escriba su DNI/CUIT]; y por la otra parte Creapp, representada por Sebastián Maza, en adelante denominado "EL DESARROLLADOR".`}
+                    variables={{
+                      location: proposal.location,
+                      date: proposal.date,
+                      client_name: proposal.client_name
+                    }}
+                    onValidityChange={setIsContractTextValid}
+                    brandPrimary={brandPrimary}
+                    isGeneratingPDF={isGeneratingPDF}
+                  />
+
+                  {/* Signature area inside modal */}
+                  <div className="flex flex-col gap-8 md:gap-10 pt-6 mt-6 border-t border-white/10">
+                    <div className="space-y-4">
+                      <p className="font-bold text-white uppercase tracking-widest text-xs mb-6">Por EL CLIENTE ({proposal.client_name}):</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs text-slate-500 uppercase tracking-widest">Firma</p>
+                          {!isSignatureEmpty && (
+                            <button
+                              onClick={clearSignature}
+                              className="text-[10px] hover:text-white flex items-center gap-1 uppercase tracking-widest transition-colors"
+                              style={{ color: brandPrimary }}
+                            >
+                              <Eraser size={12} /> Limpiar
+                            </button>
+                          )}
+                        </div>
+                        <div className="bg-white/5 border border-white/10 border-dashed rounded-xl overflow-hidden relative">
+                          <SignatureCanvas
+                            ref={sigCanvasRef}
+                            penColor="#f43f5e"
+                            canvasProps={{ className: 'w-full min-h-[140px] cursor-crosshair touch-none' }}
+                            onEnd={() => setIsSignatureEmpty(sigCanvasRef.current?.isEmpty() ?? true)}
+                          />
+                          {isSignatureEmpty && (
+                            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                              <p className="text-slate-600/50 text-xs uppercase tracking-widest font-black rotate-[-5deg]">Firmar aquí</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] text-slate-500 uppercase tracking-widest block">Aclaración (Nombre Completo)</label>
+                        {isGeneratingPDF ? (
+                          <div className="w-full py-1 text-white font-bold text-lg" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {clientRepName}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Ej. Juan Pérez"
+                            value={clientRepName}
+                            onChange={(e) => setClientRepName(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-600 focus:outline-none transition-colors"
+                          />
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] text-slate-500 uppercase tracking-widest block">DNI / CUIT</label>
+                        {isGeneratingPDF ? (
+                          <div className="w-full py-1 text-white font-bold text-lg" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {clientDNI}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Ej. 20-12345678-9"
+                            value={clientDNI}
+                            onChange={(e) => setClientDNI(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-600 focus:outline-none transition-colors"
+                          />
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] text-slate-500 uppercase tracking-widest block">Cargo</label>
+                        {isGeneratingPDF ? (
+                          <div className="w-full py-1 text-white font-bold text-lg" style={{ fontFamily: 'Arial, sans-serif' }}>
+                            {clientRole}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Ej. CEO / Director Organizacional"
+                            value={clientRole}
+                            onChange={(e) => setClientRole(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-slate-600 focus:outline-none transition-colors"
+                          />
+                        )}
                       </div>
                     </div>
-                    <div className="space-y-2 pt-2 md:pt-4">
-                      <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Aclaración</p>
-                      <p className="text-xl font-display font-black uppercase tracking-tight" style={{ color: brandPrimary }}>Sebastián Maza</p>
-                    </div>
-                    <div className="space-y-1 pt-6">
-                      <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Cargo</p>
-                      <p className="text-sm font-bold text-white uppercase tracking-widest">Desarrollador de Software / Titular</p>
+                    
+                    <div className="space-y-4 pt-6 border-t border-white/5">
+                      <p className="font-bold text-white uppercase tracking-widest text-xs mb-6">Por EL DESARROLLADOR (CreAPP):</p>
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Firma</p>
+                        <div className="bg-white/5 border border-white/10 border-dashed rounded-xl p-4 flex items-center justify-center h-28 md:h-32">
+                          <img
+                            src="/firmaseba.png"
+                            alt="Firma Sebastián Maza"
+                            className="h-full w-auto object-contain"
+                            style={{ filter: 'brightness(0) saturate(100%) invert(35%) sepia(81%) saturate(4145%) hue-rotate(336deg) brightness(96%) contrast(96%)' }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2 pt-2 md:pt-4">
+                        <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Aclaración</p>
+                        <p className="text-xl font-display font-black uppercase tracking-tight" style={{ color: brandPrimary }}>Sebastián Maza</p>
+                      </div>
+                      <div className="space-y-1 pt-6">
+                        <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Cargo</p>
+                        <p className="text-sm font-bold text-white uppercase tracking-widest">Desarrollador de Software / Titular</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Modal Footer */}
-              <div className="p-6 md:p-8 border-t border-white/5 bg-white/[0.01]">
-                <button
-                  onClick={handleFinalSignature}
-                  disabled={!clientRepName || !clientDNI || !clientRole || isSignatureEmpty}
-                  className={`w-full py-5 rounded-[1.5rem] font-black uppercase tracking-[0.25em] text-[11px] flex items-center justify-center gap-4 transition-all group ${!clientRepName || !clientDNI || !clientRole || isSignatureEmpty ? 'bg-white/5 text-slate-500 cursor-not-allowed' : 'hover:opacity-90 text-white shadow-lg active:scale-[0.98]'}`}
-                  style={clientRepName && clientDNI && clientRole && !isSignatureEmpty ? { background: gradientStyle } : {}}
-                >
-                  Confirmar y Enviar Contrato <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform duration-500" />
-                </button>
-                {(!clientRepName || !clientDNI || !clientRole || isSignatureEmpty) && (
-                  <p className="text-center text-[10px] mt-3 tracking-widest uppercase" style={{ color: brandPrimary }}>
-                    Completa tu nombre, DNI/CUIT, cargo y firma para confirmar
-                  </p>
-                )}
+                {/* Modal Footer */}
+                <div className="p-6 md:p-8 border-t border-white/5 bg-[#050505] sticky bottom-0 z-10 w-full mt-auto" data-html2canvas-ignore>
+                  <button
+                    onClick={handleFinalSignature}
+                    disabled={!clientRepName || !clientDNI || !clientRole || isSignatureEmpty || !isContractTextValid || isGeneratingPDF}
+                    className={`w-full py-5 rounded-[1.5rem] font-black uppercase tracking-[0.25em] text-[11px] flex items-center justify-center gap-4 transition-all group ${!clientRepName || !clientDNI || !clientRole || isSignatureEmpty || !isContractTextValid || isGeneratingPDF ? 'bg-white/5 text-slate-500 cursor-not-allowed' : 'hover:opacity-90 text-white shadow-lg active:scale-[0.98]'}`}
+                    style={clientRepName && clientDNI && clientRole && !isSignatureEmpty && isContractTextValid && !isGeneratingPDF ? { background: gradientStyle } : {}}
+                  >
+                    {isGeneratingPDF ? 'Procesando...' : 'Confirmar y Enviar Contrato'} <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform duration-500" />
+                  </button>
+                  {(!clientRepName || !clientDNI || !clientRole || isSignatureEmpty || !isContractTextValid) && (
+                    <p className="text-center text-[10px] mt-3 tracking-widest uppercase" style={{ color: brandPrimary }}>
+                      Completa TODOS los campos y firmas requeridos para confirmar
+                    </p>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>

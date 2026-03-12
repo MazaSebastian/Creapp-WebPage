@@ -18,6 +18,8 @@ export interface Proposal {
   contract_text: string | null;
   created_at: string;
   updated_at: string;
+  signed_contract_url?: string;
+  signed_at?: string;
 }
 
 export interface ProposalInclusion {

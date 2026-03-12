@@ -8,6 +8,7 @@ import {
   Plus,
   Trash2,
   GripVertical,
+  ShieldCheck,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import {
@@ -76,6 +77,7 @@ const ProposalEditor: React.FC = () => {
   const [brandSecondary, setBrandSecondary] = useState('#9d00ff');
   const [clientLogoUrl, setClientLogoUrl] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'signed'>('draft');
+  const [contractText, setContractText] = useState('');
 
   // Child items
   const [inclusions, setInclusions] = useState<Partial<ProposalInclusion>[]>([]);
@@ -107,6 +109,7 @@ const ProposalEditor: React.FC = () => {
       setBrandSecondary(proposal.brand_color_secondary);
       setClientLogoUrl(proposal.client_logo_url || '');
       setStatus(proposal.status);
+      setContractText(proposal.contract_text || '');
 
       const [inc, exc, mil, pay, opt, infra] = await Promise.all([
         supabase.from('proposal_inclusions').select('*').eq('proposal_id', id).order('sort_order'),
@@ -153,7 +156,7 @@ const ProposalEditor: React.FC = () => {
         client_logo_url: clientLogoUrl || null,
         developer_signature_url: null,
         status,
-        contract_text: null,
+        contract_text: contractText || null,
       };
 
       let proposalId = id;
@@ -324,6 +327,31 @@ const ProposalEditor: React.FC = () => {
                 <option value="signed">Firmada</option>
               </select>
             </div>
+          </div>
+        </Section>
+
+        {/* Plantilla de Contrato */}
+        <Section title="Plantilla de Contrato Dinámico">
+          <p className="text-slate-400 text-sm mb-4">
+            Escriba el texto legal de la propuesta. Puede usar variables como <code>{'{client_name}'}</code>, <code>{'{date}'}</code>, <code>{'{location}'}</code> y definir campos interactivos usando <code>{'[input:Etiqueta del Campo]'}</code>.
+          </p>
+          <div className="space-y-4">
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 md:p-6 mb-4">
+              <h4 className="text-secondary font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                <ShieldCheck size={16} /> Ejemplos de Sintaxis Activa
+              </h4>
+              <ul className="text-sm text-slate-300 space-y-2 list-disc pl-4">
+                <li><strong className="text-white">Variables automáticas:</strong> Escriba <code>{'{client_name}'}</code> para inyectar el nombre del cliente automáticamente.</li>
+                <li><strong className="text-white">Inputs interactivos:</strong> Escriba <code>{'[input:Nombre Completo]'}</code> para crear un campo de texto que el cliente está obligado a llenar antes de firmar.</li>
+              </ul>
+            </div>
+            
+            <textarea
+              value={contractText}
+              onChange={(e) => setContractText(e.target.value)}
+              placeholder={`Si se deja vacío, se utilizará la plantilla genérica por defecto:\nEn la localidad de {location}, a los {date}... [input:Nombre]...`}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[400px] font-mono text-sm leading-relaxed"
+            />
           </div>
         </Section>
 

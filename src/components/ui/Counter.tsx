@@ -34,7 +34,7 @@ export default function Counter({
         springValue.on("change", (latest) => {
             if (ref.current) {
                 ref.current.textContent = `${prefix}${Intl.NumberFormat("en-US").format(
-                    latest.toFixed(0)
+                    Number(latest.toFixed(0))
                 )}${suffix}`;
             }
         });
