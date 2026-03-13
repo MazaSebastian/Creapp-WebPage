@@ -211,32 +211,40 @@ const ProposalView: React.FC = () => {
         initial="hidden"
         animate="visible"
         variants={fadeUp}
-        className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center mb-4 md:mb-16 gap-8 md:gap-10 relative z-10"
+        className="max-w-6xl mx-auto flex flex-col items-center text-center mb-8 md:mb-20 gap-6 md:gap-8 relative z-10 pt-4 md:pt-8"
       >
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5 text-center md:text-left">
+        {/* Emisor: CreAPP */}
+        <div className="flex flex-col items-center gap-2">
           <CreAPPLogo />
-          <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4">
-            <div className="h-[2px] w-10 md:h-10 md:w-[2px] rounded-full shadow-md" style={{ backgroundColor: `${brandPrimary}99` }}></div>
-            <div className="flex flex-col">
-              <p className="text-[13px] uppercase tracking-[0.45em] font-black leading-none mb-2" style={{ color: brandPrimary }}>
-                Propuesta Técnica
-              </p>
-              <p className="text-sm text-slate-400 font-medium tracking-wide">Software & Automation Lab</p>
-            </div>
-          </div>
+          <p className="text-[11px] text-slate-500 font-medium tracking-[0.2em] uppercase">Software & Automation Lab</p>
         </div>
-        <div className="flex flex-col items-center md:items-end w-full md:w-auto mt-2 md:mt-0 text-center md:text-right">
+
+        {/* Divider + Tipo de documento */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-[2px] w-12 rounded-full" style={{ backgroundColor: `${brandPrimary}66` }}></div>
+          <p className="text-[13px] uppercase tracking-[0.45em] font-black leading-none" style={{ color: brandPrimary }}>
+            Propuesta Técnica
+          </p>
+        </div>
+
+        {/* Conector direccional */}
+        <p className="text-[11px] text-slate-600 uppercase tracking-[0.3em] font-bold italic">preparada para</p>
+
+        {/* Destinatario: Cliente (protagonista) */}
+        <div className="flex flex-col items-center gap-3">
           {proposal.client_logo_url && (
-            <img src={proposal.client_logo_url} alt={proposal.client_name} className="h-10 md:h-12 w-auto object-contain mb-3 md:mb-2 origin-center md:origin-right" />
+            <img src={proposal.client_logo_url} alt={proposal.client_name} className="h-14 md:h-16 w-auto object-contain" />
           )}
           {!proposal.client_logo_url && (
-            <h2 className="text-2xl md:text-2xl font-display font-black text-white tracking-tight mb-2 truncate max-w-full">{proposal.client_name}</h2>
+            <h2 className="text-3xl md:text-4xl font-display font-black text-white tracking-tight">{proposal.client_name}</h2>
           )}
-          <div className="flex gap-4 mt-1 text-[11px] text-slate-600 uppercase tracking-widest font-black">
-            <span>{proposal.date}</span>
-            <span>•</span>
-            <span>{proposal.location}</span>
-          </div>
+        </div>
+
+        {/* Contexto temporal */}
+        <div className="flex gap-4 text-[11px] uppercase tracking-widest font-black" style={{ color: `${brandPrimary}99` }}>
+          <span>{proposal.date}</span>
+          <span>•</span>
+          <span>{proposal.location}</span>
         </div>
       </motion.header>
 
@@ -259,14 +267,22 @@ const ProposalView: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest mb-8 border"
                 style={{ backgroundColor: `${brandPrimary}1A`, color: brandPrimary, borderColor: `${brandPrimary}33` }}
               >
-                <Rocket size={14} className="fill-current" />
-                MÁS QUE UNA APP
+                {!proposal.hero_badge && <Rocket size={14} className="fill-current" />}
+                {proposal.hero_badge || 'MÁS QUE UNA APP'}
               </div>
               <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white mb-6 md:mb-10 leading-[1.05] tracking-tighter mx-auto md:mx-0">
-                Llevamos tu sistema de gestión <br />
-                <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>
-                  al próximo nivel.
-                </span>
+                {proposal.hero_title ? (
+                  <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>
+                    {proposal.hero_title}
+                  </span>
+                ) : (
+                  <>
+                    Llevamos tu sistema de gestión <br />
+                    <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>
+                      al próximo nivel.
+                    </span>
+                  </>
+                )}
               </h3>
               <p className="text-slate-400 text-lg md:text-xl leading-relaxed font-light max-w-lg mx-auto md:mx-0">{proposal.description}</p>
             </div>
@@ -397,13 +413,13 @@ const ProposalView: React.FC = () => {
                 className={`flex-1 md:flex-none px-4 md:px-10 py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest md:tracking-[0.2em] transition-all duration-500 whitespace-nowrap ${activeTab === 'alcance' ? 'text-white shadow-2xl -translate-y-0.5' : 'text-slate-500 hover:text-slate-300'}`}
                 style={activeTab === 'alcance' ? { background: gradientStyle } : {}}
               >
-                Inclusiones
+                Incluye
               </button>
               <button
                 onClick={() => setActiveTab('exclusiones')}
                 className={`flex-1 md:flex-none px-4 md:px-10 py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest md:tracking-[0.2em] transition-all duration-500 whitespace-nowrap ${activeTab === 'exclusiones' ? 'bg-red-900/40 text-red-200 border border-red-500/20 shadow-2xl -translate-y-0.5' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                Exclusiones
+                No incluye
               </button>
             </div>
 
@@ -415,24 +431,22 @@ const ProposalView: React.FC = () => {
                 {activeTab === 'alcance' ? (
                   <motion.div
                     key="alcance"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                     className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 relative z-10"
                   >
                     {proposal.inclusions.map((item, i) => {
                       const isTooltipActive = activeTooltip === `inclusion-${i}`;
                       return (
-                        <motion.div
-                          whileHover={{ scale: 1.03 }}
+                        <div
                           key={i}
                           onClick={() => setActiveTooltip(isTooltipActive ? null : `inclusion-${i}`)}
                           onMouseLeave={() => setActiveTooltip(null)}
-                          className="relative overflow-hidden p-5 md:p-7 rounded-3xl bg-white/[0.015] hover:bg-white/[0.05] transition-all border border-transparent group cursor-pointer shadow-sm grid [grid-template-areas:'stack'] items-center"
-                          style={{ ['--hover-border' as string]: `${brandPrimary}33` }}
+                          className="relative overflow-hidden p-5 md:p-7 rounded-3xl bg-white/[0.015] md:hover:bg-white/[0.05] md:hover:scale-[1.03] transition-[background-color,transform] duration-300 border border-transparent group cursor-pointer shadow-sm grid [grid-template-areas:'stack'] items-center"
                         >
-                          <div className={`flex gap-6 relative z-10 transition-opacity duration-500 items-center [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : 'group-hover:opacity-0'}`}>
+                          <div className={`flex gap-6 relative z-10 transition-opacity duration-300 items-center [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : 'md:group-hover:opacity-0'}`}>
                             <div className="shrink-0 rounded-2xl flex items-center justify-center w-14 h-14 shadow-inner" style={{ backgroundColor: `${brandPrimary}0D` }}>
                               <IconResolver name={item.icon_name} size={20} className="" style={{ color: brandPrimary }} />
                             </div>
@@ -444,50 +458,49 @@ const ProposalView: React.FC = () => {
                               <p className="text-xs text-slate-500 leading-relaxed uppercase tracking-widest font-bold opacity-80">{item.description}</p>
                             </div>
                           </div>
-                          <div className={`flex flex-col justify-center transition-all duration-500 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none'}`}>
+                          <div className={`flex flex-col justify-center transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 md:group-hover:opacity-100 md:group-hover:translate-y-0 pointer-events-none'}`}>
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ backgroundColor: brandPrimary }}></div>
                               <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: brandPrimary }}>Detalle Técnico</p>
                             </div>
                             <p className="text-[13px] text-slate-300 font-light leading-relaxed">{item.tooltip}</p>
                           </div>
-                          <div className={`absolute inset-0 z-[15] backdrop-blur-md transition-opacity duration-500 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} style={{ backgroundColor: 'var(--color-proposal-dark)' }}></div>
-                        </motion.div>
+                          <div className={`absolute inset-0 z-[15] md:backdrop-blur-md transition-opacity duration-300 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`} style={{ backgroundColor: 'var(--color-proposal-dark)' }}></div>
+                        </div>
                       );
                     })}
                   </motion.div>
                 ) : (
                   <motion.div
                     key="exclusiones"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                     className="space-y-4 md:space-y-5 relative z-10"
                   >
                     {proposal.exclusions.map((item, i) => {
                       const isTooltipActive = activeTooltip === `exclusion-${i}`;
                       return (
-                        <motion.div
-                          whileHover={{ scale: 1.02 }}
+                        <div
                           key={i}
                           onClick={() => setActiveTooltip(isTooltipActive ? null : `exclusion-${i}`)}
                           onMouseLeave={() => setActiveTooltip(null)}
-                          className="relative overflow-hidden p-6 rounded-[1.5rem] bg-red-500/[0.02] border border-red-500/10 hover:border-red-500/20 transition-all group cursor-pointer grid [grid-template-areas:'stack'] items-center"
+                          className="relative overflow-hidden p-6 rounded-[1.5rem] bg-red-500/[0.02] border border-red-500/10 md:hover:border-red-500/20 md:hover:scale-[1.02] transition-[border-color,transform] duration-300 group cursor-pointer grid [grid-template-areas:'stack'] items-center"
                         >
-                          <div className={`flex items-center gap-6 relative z-10 transition-opacity duration-500 [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : 'group-hover:opacity-0'}`}>
+                          <div className={`flex items-center gap-6 relative z-10 transition-opacity duration-300 [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : 'md:group-hover:opacity-0'}`}>
                             <XCircle size={22} className="text-red-500 shrink-0 opacity-60" />
                             <p className="text-base text-slate-400 tracking-wide font-light italic">{item.title}</p>
                           </div>
-                          <div className={`flex flex-col justify-center transition-all duration-500 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none'}`}>
+                          <div className={`flex flex-col justify-center transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 md:group-hover:opacity-100 md:group-hover:translate-y-0 pointer-events-none'}`}>
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]"></div>
                               <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Aclaración</p>
                             </div>
                             <p className="text-[13px] text-red-200/80 font-light leading-relaxed">{item.tooltip}</p>
                           </div>
-                          <div className={`absolute inset-0 z-[15] backdrop-blur-md bg-[#160505]/95 transition-opacity duration-500 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}></div>
-                        </motion.div>
+                          <div className={`absolute inset-0 z-[15] md:backdrop-blur-md bg-[#160505]/95 transition-opacity duration-300 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`}></div>
+                        </div>
                       );
                     })}
                   </motion.div>

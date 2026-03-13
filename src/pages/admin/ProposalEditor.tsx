@@ -78,6 +78,8 @@ const ProposalEditor: React.FC = () => {
   const [clientLogoUrl, setClientLogoUrl] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'signed'>('draft');
   const [contractText, setContractText] = useState('');
+  const [heroBadge, setHeroBadge] = useState('');
+  const [heroTitle, setHeroTitle] = useState('');
 
   // Child items
   const [inclusions, setInclusions] = useState<Partial<ProposalInclusion>[]>([]);
@@ -110,6 +112,8 @@ const ProposalEditor: React.FC = () => {
       setClientLogoUrl(proposal.client_logo_url || '');
       setStatus(proposal.status);
       setContractText(proposal.contract_text || '');
+      setHeroBadge(proposal.hero_badge || '');
+      setHeroTitle(proposal.hero_title || '');
 
       const [inc, exc, mil, pay, opt, infra] = await Promise.all([
         supabase.from('proposal_inclusions').select('*').eq('proposal_id', id).order('sort_order'),
@@ -157,6 +161,8 @@ const ProposalEditor: React.FC = () => {
         developer_signature_url: null,
         status,
         contract_text: contractText || null,
+        hero_badge: heroBadge || null,
+        hero_title: heroTitle || null,
       };
 
       let proposalId = id;
@@ -326,6 +332,33 @@ const ProposalEditor: React.FC = () => {
                 <option value="published">Publicada</option>
                 <option value="signed">Firmada</option>
               </select>
+            </div>
+          </div>
+        </Section>
+
+        {/* Hero / Resumen Ejecutivo */}
+        <Section title="Hero / Resumen Ejecutivo">
+          <p className="text-slate-500 text-xs mb-2">Personalizá el badge y el título principal que ve el cliente al abrir la propuesta. Si se dejan vacíos se usan los valores genéricos.</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Badge del Hero</label>
+              <input
+                type="text"
+                value={heroBadge}
+                onChange={(e) => setHeroBadge(e.target.value)}
+                placeholder="Ej: ⚙️ TECNOLOGÍA PARA ASTILLEROS"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Título del Hero</label>
+              <input
+                type="text"
+                value={heroTitle}
+                onChange={(e) => setHeroTitle(e.target.value)}
+                placeholder="Ej: La plataforma que tu operación necesita para escalar con confianza."
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-sm"
+              />
             </div>
           </div>
         </Section>

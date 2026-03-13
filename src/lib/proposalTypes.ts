@@ -13,6 +13,8 @@ export interface Proposal {
   brand_color_primary: string;
   brand_color_secondary: string;
   client_logo_url: string | null;
+  hero_badge: string | null;
+  hero_title: string | null;
   developer_signature_url: string | null;
   status: 'draft' | 'published' | 'signed';
   contract_text: string | null;
